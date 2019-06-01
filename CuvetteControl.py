@@ -22,6 +22,7 @@ class Arm:
         self.rc = RoboClaw(find_serial_port(), names = self.motor_names + self.pwm_names,\
                                                     addresses = [128])
 	self.pos = 0
+	self.offset = 0
        
         while 1:
             start_time = time.time()
@@ -41,10 +42,12 @@ class Arm:
             target_f = target
 
             if(target_f['grip'] == -1):
-                self.rc.drive_duty("led", -5000)
+                self.rc.drive_duty("led", -30000)
             else:
                 self.rc.drive_duty("led", 0)
 
+            if math.fabs(target_f['yaw']) > 0.1:
+                self.offset += 100*target_f['yaw']
 
             if(target_f['roll'] == 1 and self.oneShot == 0):
                 self.pos = self.pos + 1
@@ -58,8 +61,10 @@ class Arm:
             if target_f["reset"]:
                 print ("RESETTING!!!")
                 self.rc.set_encoder('spinner',0)
+                self.pos = 0
+                self.offset = 0
 
-            self.rc.drive_position('spinner',int(self.pos*self.CPR['spinner']))
+            self.rc.drive_position('spinner',int(self.pos*self.CPR['spinner'] + self.offset))
         except timeout:
             print ("No commands") 
 
