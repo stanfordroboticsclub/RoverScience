@@ -15,7 +15,7 @@ class Arm:
         self.target_vel = Subscriber(8410)
 
         self.motor_names = ["spinner"]
-        self.pwm_names = ["null"]
+        self.pwm_names = ["led"]
 
         self.CPR = {'spinner':1294}
         self.oneShot = 0
@@ -30,19 +30,6 @@ class Arm:
                 pass
 
 
-    def condition_input(self,target):
-        target['x']     = - target['x']
-        target['yaw']  = 0.01* target['yaw']
-
-        # rotates command frame to end effector orientation
-        angle = self.xyz_positions['yaw']
-        x = target['x']
-        y = target['y']
-        target['x'] = x*math.cos(angle) - y*math.sin(angle)
-        target['y'] = x*math.sin(angle) + y*math.cos(angle)
-
-        return target
-
     def update(self):
         try:
             print()
@@ -52,13 +39,20 @@ class Arm:
             target = {bytes(key): value for key, value in target.iteritems()}
             print(target)
             target_f = target
-            if(target_f['grip'] == 1 and self.oneShot == 0):
+
+            if(target_f['grip'] == -1):
+                self.rc.drive_duty("led", -5000)
+            else:
+                self.rc.drive_duty("led", 0)
+
+
+            if(target_f['roll'] == 1 and self.oneShot == 0):
                 self.pos = self.pos + 1
                 self.oneShot = 1
-            elif(target_f['grip'] == -1 and self.oneShot == 0):
+            elif(target_f['roll'] == -1 and self.oneShot == 0):
                 self.pos = self.pos - 1
                 self.oneShot = 1
-            if(target_f['grip'] == 0):
+            if(target_f['roll'] == 0):
                 self.oneShot = 0
 	
             if target_f["reset"]:
